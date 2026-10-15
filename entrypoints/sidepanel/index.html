@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sonner Applier</title>
+  <style>
+    :root { color-scheme: dark; font-family: Arial, Helvetica, sans-serif; background: #08090a; color: #f5f5f5; }
+    * { box-sizing: border-box; }
+    body { width:100%;min-width:320px;height:100vh;min-height:420px;margin:0;display:flex;flex-direction:column;overflow:hidden;background:radial-gradient(ellipse at top left,#17191c,#08090a 58%); }
+    header { flex:none;padding: 20px 22px 16px; border-bottom: 1px solid #292c2e; }
+    .brand { display:flex; align-items:center; gap:10px; color:#f5f5f5; font-size:14px; font-weight:700; letter-spacing:.02em; }
+    .brand-icon { width:20px;height:20px;flex:none;object-fit:contain;border-radius:4px; }
+    .mark { display:grid; place-items:center; width:28px;height:28px;border-radius:50%;background:#b9f27c;color:#111;font-weight:900; }
+    .sub { margin:10px 0 0;color:#858a8d;font-size:11px; }
+    main { flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 18px 12px;overflow:hidden; }
+    .toolbar { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px; }
+    .path { color:#aeb4b5;font-size:11px; } .path b { color:#b9f27c;font-weight:600; }
+    button { border:1px solid #414648;border-radius:7px;background:#1e2223;color:#e7e7e8;padding:7px 10px;font:inherit;font-size:10px;cursor:pointer; }
+    button:hover { border-color:#b9f27c;color:#fff; } button:disabled { opacity:.5;cursor:wait; }
+    #status { padding:12px 13px;border:1px solid #2b3030;border-radius:8px;color:#aeb4b5;font-size:11px;line-height:1.6;background:#151819; }
+    #status:before { content:'› ';color:#b9f27c; } #status.error { color:#ff9b91;border-color:#593a37; }
+    .list-stage { position:relative;display:flex;flex:1;min-height:0;overflow:hidden; }
+    .loader { position:absolute;inset:0;z-index:2;overflow:hidden;border:1px solid #283128;border-radius:10px;background:radial-gradient(ellipse at 50% 45%,#1d2a1c 0%,#101512 58%,#0b0e0d 100%); }
+    .loader:after { position:absolute;inset:0;background:linear-gradient(180deg,transparent 72%,#0b0e0dbd 100%);content:'';pointer-events:none; }
+    #neural-canvas { display:block;width:100%;height:100%; }
+    .summary-row { display:flex;align-items:center;gap:8px;margin:12px 0;padding:7px;border:1px solid #292e2e;border-radius:8px;background:#151819; }
+    .stats { display:flex;flex:1;gap:5px;min-width:0;margin:0; }
+    .stat { flex:1;min-width:0;padding:5px 6px;border:0;border-radius:6px;background:#1b2020; }
+    .stat strong { display:block;color:#f5f5f5;font-size:16px; } .stat span { color:#81898a;font-size:8px;text-transform:uppercase;letter-spacing:.05em; }
+    .summary-row.is-loading .stat { display:grid;min-height:48px;place-items:center; }
+    .summary-row.is-loading .stat strong { display:grid;height:19px;place-items:center;font-size:0; }
+    .summary-row.is-loading .stat strong:after { width:12px;height:12px;border:2px solid #444a43;border-top-color:#b9f27c;border-radius:50%;content:'';animation:spin .8s linear infinite; }
+    .summary-row.is-loading .stat span { display:none; }
+    .apply-overview { display:flex;align-items:center;gap:7px;flex:none;margin:0;padding:0;border:0;background:transparent; }
+    .pie-chart { --easy-share:0%;position:relative;display:grid;flex:none;place-items:center;width:48px;height:48px;border-radius:50%;background:conic-gradient(#b9f27c 0 var(--easy-share),#777d85 var(--easy-share) 100%); }
+    .pie-chart:before { position:absolute;inset:7px;border-radius:50%;background:#151819;content:''; }
+    .pie-chart span { position:relative;color:#f5f5f5;font-size:10px;font-weight:800; }
+    .summary-row.is-loading .pie-chart { background:transparent; }
+    .summary-row.is-loading .pie-chart:before { display:none; }
+    .summary-row.is-loading .pie-chart:after { width:26px;height:26px;border:2px solid #444a43;border-top-color:#b9f27c;border-radius:50%;content:'';animation:spin .8s linear infinite; }
+    .summary-row.is-loading .pie-chart span,.summary-row.is-loading .chart-legend { display:none; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .chart-legend { display:grid;gap:5px;min-width:0;width:112px; }
+    .legend-item { display:flex;align-items:center;gap:6px;color:#c4c7cb;font-size:9px;white-space:nowrap; }
+    .legend-dot { width:7px;height:7px;flex:none;border-radius:50%;background:#b9f27c; }
+    .legend-dot.business { background:#777d85; }
+    #select-all-row { display:flex;align-items:center;gap:8px;margin:0 0 9px;color:#9ba2a0;font-size:10px; }
+    #results { flex:1;min-height:0;display:flex;flex-direction:column; }
+    #jobs { flex:1;min-width:0;min-height:0;display:grid;align-content:start;gap:8px;overflow-y:auto;overflow-x:hidden;padding:0 3px 0 0;overscroll-behavior:contain;scrollbar-gutter:stable; }
+    .job { display:flex;align-items:flex-start;gap:10px;min-width:0;padding:12px 13px;border:1px solid #2b3030;border-radius:8px;background:linear-gradient(120deg,#191d1e,#141718);cursor:pointer;transition:background .15s ease,border-color .15s ease; }
+    .job:hover,.job:focus-visible { border-color:#587342;background:linear-gradient(120deg,#273522,#1b2419);outline:none; }
+    .job.is-selected { border-color:#71974f;background:linear-gradient(120deg,#24311e,#192119); }
+    .job input[type="checkbox"], #select-all { accent-color:#b9f27c;cursor:pointer; }
+    .job-info { display:flex;align-items:baseline;flex-wrap:wrap;column-gap:9px;row-gap:4px;min-width:0;overflow-wrap:anywhere; }
+    .job-title { color:#e8ece9;font-size:11px;line-height:1.5;font-weight:700;text-decoration:none; }
+    .job-title:hover { color:#b9f27c;text-decoration:underline; } .company { color:#9ba2a0;font-size:10px; }
+    .job-tags { display:inline-flex;flex-wrap:wrap;gap:5px; }
+    .job-tag { padding:3px 6px;border:1px solid #353b3d;border-radius:99px;color:#aeb4b5;font-size:9px; }
+    .job-tag-easy-apply { border-color:#57743c;background:rgba(185,242,124,.1);color:#b9f27c; }
+    .job-tag.is-processing { border-color:#9a682d;background:rgba(255,180,84,.12);color:#ffb454; }
+    .empty { padding:18px 12px;border:1px dashed #343a39;border-radius:8px;color:#737b79;font-size:10px;line-height:1.7;text-align:center; }
+    .apply-container { margin-top:12px;padding:10px 0 0;border-top:1px solid #292c2e;background:#101113; }
+    .apply { display:block;width:100%;padding:12px;border:0;border-radius:5px;background:#b9f27c;color:#151811;text-align:center;text-decoration:none;font-size:11px;font-weight:700;letter-spacing:.08em; }
+    .apply:hover:not(:disabled) { background:#cbff91;color:#151811;border-color:#cbff91; }
+    .apply:disabled { background:#657650;color:#e7e7e8;cursor:not-allowed; }
+    .hidden { display:none!important; }
+    #selection-controls { display:flex;flex-wrap:wrap;gap:8px 14px;margin:10px 0;color:#aeb4b5;font-size:10px; }
+    #selection-controls label { display:inline-flex;align-items:center;gap:5px;cursor:pointer; }
+    #selection-controls input { accent-color:#b9f27c;cursor:pointer; }
+    footer { flex:none;padding:10px 18px;border-top:1px solid #292c2e;color:#626a69;font-size:9px; }
+  </style>
+</head>
+<body>
+  <header><div class="brand"><img id="site-icon" class="brand-icon" alt=""><span id="site-name">site</span><span style="color:#b9f27c">/</span>extract</div><p class="sub">VAGAS DA SUA BUSCA, EM UM SÓ LUGAR</p></header>
+  <main>
+    <div class="toolbar"><span id="toolbar-label" class="path"><b>RESULTADOS DA BUSCA</b></span><button id="retry" type="button">↻ Atualizar</button></div>
+    <div id="status" role="status" aria-live="polite">Iniciando extração da página ativa…</div>
+    <section id="results" class="hidden">
+      <div id="summary-row" class="summary-row" aria-live="polite">
+        <div class="stats"><div class="stat"><strong id="count">0</strong><span>vagas carregadas</span></div><div class="stat"><strong id="company-count">0</strong><span>empresas</span></div></div>
+        <div class="apply-overview" aria-label="Proporção do tipo de candidatura">
+          <div id="apply-chart" class="pie-chart" role="img" aria-label="Gráfico de Easy apply e Business website"><span id="easy-percent">0%</span></div>
+          <div class="chart-legend">
+            <div class="legend-item"><i class="legend-dot"></i>Easy apply</div>
+            <div class="legend-item"><i class="legend-dot business"></i>Business website</div>
+          </div>
+        </div>
+      </div>
+      <div id="selection-controls">
+        <label><input id="select-all" type="checkbox"> Todas</label>
+        <label><input id="select-easy" type="checkbox"> Candidate-se facilmente</label>
+        <label><input id="select-standard" type="checkbox"> Vaga padrão</label>
+      </div>
+      <div class="list-stage">
+        <div id="jobs"></div>
+        <div id="loader" class="loader hidden" aria-hidden="true">
+          <canvas id="neural-canvas"></canvas>
+        </div>
+      </div>
+      <div class="apply-container"><button id="apply" class="apply" type="button" disabled>SE APLICAR AGORA</button></div>
+    </section>
+  </main>
+  <footer>SONNER APPLIER</footer>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
