@@ -1,0 +1,19 @@
+{
+  "name": "sonner-applier",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt -b chrome",
+    "build": "wxt build -b chrome",
+    "zip": "wxt zip -b chrome"
+  },
+  "dependencies": {
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.326",
+    "typescript": "^5.8.3",
+    "wxt": "^0.20.6"
+  }
+}
